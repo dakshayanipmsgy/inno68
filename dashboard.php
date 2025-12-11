@@ -17,6 +17,11 @@ if (!isset($_SESSION['name']) && isset($_SESSION['user_name'])) {
 $name = $_SESSION['name'] ?? $_SESSION['user_name'] ?? 'User';
 $role = $_SESSION['role'] ?? $_SESSION['user_role'] ?? 'Member';
 
+if (strcasecmp($role, 'Financier') === 0) {
+    require __DIR__ . '/financier_dashboard.php';
+    exit;
+}
+
 if (strcasecmp($role, 'Vendor') === 0) {
     require __DIR__ . '/vendor_dashboard.php';
     exit;

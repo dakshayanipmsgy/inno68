@@ -12,6 +12,7 @@ if (!$userId || strcasecmp($role, 'Vendor') !== 0) {
 
 $projects = readJSON('projects.json');
 $users = readJSON('users.json');
+$transactions = readJSON('transactions.json');
 
 // Map consumer IDs to names for easy lookup.
 $consumerNames = [];
@@ -25,6 +26,13 @@ foreach ($users as $user) {
 $myProjects = array_values(array_filter($projects, function ($project) use ($userId) {
     return isset($project['vendor_id']) && (string)$project['vendor_id'] === (string)$userId;
 }));
+
+$vendorEarnings = 0.0;
+foreach ($transactions as $txn) {
+    if (($txn['to'] ?? '') === 'Vendor' && isset($txn['vendor_id']) && (string)$txn['vendor_id'] === (string)$userId) {
+        $vendorEarnings += (float)($txn['amount'] ?? 0);
+    }
+}
 
 // Status badge helper
 function statusBadgeClass(string $status): string
@@ -82,6 +90,18 @@ function statusBadgeClass(string $status): string
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     <?php endif; ?>
+
+    <div class="row g-4 mb-4">
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <p class="text-muted mb-1">Financial Overview</p>
+                    <h4 class="fw-bold text-success">₹<?= htmlspecialchars(number_format($vendorEarnings, 2), ENT_QUOTES, 'UTF-8') ?></h4>
+                    <p class="small text-muted mb-0">Total earnings from paid consumer bills.</p>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <div class="card border-0 shadow-sm">
         <div class="card-header bg-white d-flex justify-content-between align-items-center">
