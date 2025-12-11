@@ -1,5 +1,9 @@
 <?php
 session_start();
+require_once __DIR__ . '/functions.php';
+
+$projects = readJSON('projects.json');
+$totalProjects = count($projects);
 ?>
 <!doctype html>
 <html lang="en">
@@ -8,6 +12,7 @@ session_start();
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Digital RESCO Platform</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
             background: linear-gradient(135deg, #0ea5e9, #10b981);
@@ -53,6 +58,30 @@ session_start();
                 <div class="d-flex gap-2">
                     <a href="register.php" class="btn btn-primary">Get Started</a>
                     <a href="login.php" class="btn btn-outline-secondary">Existing user? Login</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container pb-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-lg">
+                <div class="card-body p-4 p-lg-5 text-center">
+                    <p class="text-muted mb-1">Live Platform Stats</p>
+                    <h2 class="fw-bold">Real Deployment Momentum</h2>
+                    <p class="text-muted">Investors can explore an actively growing pipeline backed by vetted participants.</p>
+                    <div class="d-flex justify-content-center gap-4 flex-wrap mt-4">
+                        <div>
+                            <h1 class="display-5 fw-bold text-primary mb-0"><?= htmlspecialchars($totalProjects, ENT_QUOTES, 'UTF-8') ?></h1>
+                            <p class="mb-0 text-muted">Total Projects</p>
+                        </div>
+                        <div>
+                            <h1 class="display-6 fw-semibold text-success mb-0">Multi-party</h1>
+                            <p class="mb-0 text-muted">Vendors • Consumers • Financiers</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
