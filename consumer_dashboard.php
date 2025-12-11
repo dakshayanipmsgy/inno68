@@ -12,6 +12,7 @@ if (!$userId || strcasecmp($role, 'Consumer') !== 0) {
 
 $projects = readJSON('projects.json');
 $users = readJSON('users.json');
+$bills = readJSON('bills.json');
 
 $vendorNames = [];
 foreach ($users as $user) {
@@ -22,6 +23,10 @@ foreach ($users as $user) {
 
 $myProjects = array_values(array_filter($projects, function ($project) use ($userId) {
     return isset($project['consumer_id']) && (string)$project['consumer_id'] === (string)$userId;
+}));
+
+$myBills = array_values(array_filter($bills, function ($bill) use ($userId) {
+    return isset($bill['consumer_id']) && (string)$bill['consumer_id'] === (string)$userId && strcasecmp($bill['status'] ?? '', 'UNPAID') === 0;
 }));
 
 function statusBadge(string $status): string
@@ -62,7 +67,7 @@ function statusBadge(string $status): string
         <div>
             <p class="mb-1">Consumer Workspace</p>
             <h1 class="h3 fw-bold">Welcome, <?= htmlspecialchars($consumerName, ENT_QUOTES, 'UTF-8') ?>!</h1>
-            <p class="mb-0">Review vendor proposals and approve your solar PPA.</p>
+            <p class="mb-0">Review vendor proposals, track live output, and pay your bills.</p>
         </div>
         <div class="text-end">
             <span class="badge bg-light text-dark mb-2">Role: Consumer</span>
@@ -84,6 +89,61 @@ function statusBadge(string $status): string
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     <?php endif; ?>
+
+    <div class="row g-4 mb-4">
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <p class="text-muted mb-1">Live System Performance</p>
+                    <h4 class="fw-bold text-success">Current Output: 2.5 kW</h4>
+                    <p class="small text-muted mb-0">Mock telemetry feed to demonstrate real-time visibility.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="mb-0 fw-semibold">Pending Bills</h5>
+                        <small class="text-muted">Auto-generated after each billing cycle.</small>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead class="text-uppercase small">
+                            <tr>
+                                <th>Units (kWh)</th>
+                                <th>Amount (INR)</th>
+                                <th>EMI (INR)</th>
+                                <th class="text-end">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        <?php if (empty($myBills)): ?>
+                            <tr>
+                                <td colspan="4" class="text-center text-muted py-4">No unpaid bills right now.</td>
+                            </tr>
+                        <?php else: ?>
+                            <?php foreach ($myBills as $bill): ?>
+                                <tr>
+                                    <td><?= htmlspecialchars(number_format((float)($bill['generation_units'] ?? 0), 0), ENT_QUOTES, 'UTF-8') ?></td>
+                                    <td>₹<?= htmlspecialchars(number_format((float)($bill['bill_amount'] ?? 0), 2), ENT_QUOTES, 'UTF-8') ?></td>
+                                    <td>₹<?= htmlspecialchars(number_format((float)($bill['emi_due'] ?? 0), 2), ENT_QUOTES, 'UTF-8') ?></td>
+                                    <td class="text-end">
+                                        <form method="post" action="pay_bill.php" class="d-inline">
+                                            <input type="hidden" name="bill_id" value="<?= htmlspecialchars($bill['id'] ?? '') ?>">
+                                            <button type="submit" class="btn btn-success btn-sm">Pay Bill</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <div class="card border-0 shadow-sm">
         <div class="card-header bg-white d-flex justify-content-between align-items-center">
