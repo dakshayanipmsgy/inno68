@@ -6,8 +6,21 @@ if (empty($_SESSION['user_id'])) {
     redirect('login.php');
 }
 
-$name = $_SESSION['user_name'] ?? 'User';
-$role = $_SESSION['user_role'] ?? 'Member';
+// Normalize session keys to support both legacy and expected keys.
+if (!isset($_SESSION['role']) && isset($_SESSION['user_role'])) {
+    $_SESSION['role'] = $_SESSION['user_role'];
+}
+if (!isset($_SESSION['name']) && isset($_SESSION['user_name'])) {
+    $_SESSION['name'] = $_SESSION['user_name'];
+}
+
+$name = $_SESSION['name'] ?? $_SESSION['user_name'] ?? 'User';
+$role = $_SESSION['role'] ?? $_SESSION['user_role'] ?? 'Member';
+
+if (strcasecmp($role, 'Vendor') === 0) {
+    require __DIR__ . '/vendor_dashboard.php';
+    exit;
+}
 ?>
 <!doctype html>
 <html lang="en">
