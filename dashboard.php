@@ -26,6 +26,11 @@ if (strcasecmp($role, 'Consumer') === 0) {
     require __DIR__ . '/consumer_dashboard.php';
     exit;
 }
+
+if (strcasecmp($role, 'DISCOM') === 0) {
+    require __DIR__ . '/discom_dashboard.php';
+    exit;
+}
 ?>
 <!doctype html>
 <html lang="en">
