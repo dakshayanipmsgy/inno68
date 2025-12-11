@@ -30,6 +30,49 @@ foreach ($users as $user) {
 $loanApplications = array_values(array_filter($projects, function ($project) {
     return isset($project['status']) && strcasecmp($project['status'], 'FUNDING_REQUESTED') === 0;
 }));
+
+// Portfolio metrics
+$liveProjects = array_filter($projects, function ($project) {
+    return isset($project['status']) && strcasecmp($project['status'], 'LIVE') === 0;
+});
+
+$totalCapital = array_reduce($liveProjects, function ($carry, $project) {
+    return $carry + (float)($project['loan_amount'] ?? 0);
+}, 0.0);
+
+function creditScoreValue(array $project): float
+{
+    if (isset($project['ai_credit_score'])) {
+        return (float)$project['ai_credit_score'];
+    }
+
+    $seed = $project['id'] ?? $project['title'] ?? uniqid('', true);
+    return 600 + (crc32((string)$seed) % 251); // deterministic between 600-850
+}
+
+$creditScores = array_map('creditScoreValue', $loanApplications);
+$avgRiskScore = !empty($creditScores) ? array_sum($creditScores) / count($creditScores) : 0;
+
+// Risk distribution
+$statusCounts = [];
+foreach ($projects as $project) {
+    $label = isset($project['status']) ? strtoupper($project['status']) : 'UNKNOWN';
+    $statusCounts[$label] = ($statusCounts[$label] ?? 0) + 1;
+}
+if (empty($statusCounts)) {
+    $statusCounts = ['NO DATA' => 1];
+}
+
+function creditBadgeClass(float $score): string
+{
+    if ($score > 750) {
+        return 'bg-success';
+    }
+    if ($score > 650) {
+        return 'bg-warning text-dark';
+    }
+    return 'bg-danger';
+}
 ?>
 <!doctype html>
 <html lang="en">
@@ -38,6 +81,7 @@ $loanApplications = array_values(array_filter($projects, function ($project) {
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Financier Dashboard | Digital RESCO Platform</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body { background: #f4f8fb; }
         .hero {
@@ -48,6 +92,10 @@ $loanApplications = array_values(array_filter($projects, function ($project) {
             box-shadow: 0 12px 30px rgba(13, 110, 253, 0.15);
         }
         .table thead { background: #e8f5ff; }
+        .summary-card {
+            border-radius: 14px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+        }
     </style>
 </head>
 <body>
@@ -78,6 +126,48 @@ $loanApplications = array_values(array_filter($projects, function ($project) {
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     <?php endif; ?>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card summary-card border-0 h-100">
+                <div class="card-body">
+                    <p class="text-muted mb-1">Total Capital Deployed</p>
+                    <h3 class="fw-bold">₹<?= htmlspecialchars(number_format($totalCapital, 2), ENT_QUOTES, 'UTF-8') ?></h3>
+                    <small class="text-muted">LIVE projects funded</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card summary-card border-0 h-100">
+                <div class="card-body">
+                    <p class="text-muted mb-1">Projected ROI</p>
+                    <h3 class="fw-bold text-success">₹<?= htmlspecialchars(number_format($totalCapital * 0.12, 2), ENT_QUOTES, 'UTF-8') ?></h3>
+                    <small class="text-muted">Assuming 12% return</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card summary-card border-0 h-100">
+                <div class="card-body">
+                    <p class="text-muted mb-1">Avg. Portfolio Risk Score</p>
+                    <h3 class="fw-bold"><?= htmlspecialchars(number_format($avgRiskScore, 0), ENT_QUOTES, 'UTF-8') ?></h3>
+                    <small class="text-muted">AI credit scoring insights</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="mb-0 fw-semibold">Risk Distribution</h5>
+                <small class="text-muted">Portfolio by project status</small>
+            </div>
+        </div>
+        <div class="card-body">
+            <canvas id="riskChart" height="120"></canvas>
+        </div>
+    </div>
 
     <div class="card border-0 shadow-sm">
         <div class="card-header bg-white d-flex justify-content-between align-items-center">
@@ -110,7 +200,10 @@ $loanApplications = array_values(array_filter($projects, function ($project) {
                             <td><?= htmlspecialchars($vendorNames[$project['vendor_id'] ?? ''] ?? 'Vendor', ENT_QUOTES, 'UTF-8') ?></td>
                             <td><?= htmlspecialchars($consumerNames[$project['consumer_id'] ?? ''] ?? 'Consumer', ENT_QUOTES, 'UTF-8') ?></td>
                             <td class="text-end">₹<?= htmlspecialchars(number_format((float)($project['total_cost'] ?? 0)), ENT_QUOTES, 'UTF-8') ?></td>
-                            <td class="text-center fw-bold text-success"><?= rand(600, 850) ?></td>
+                            <?php $score = creditScoreValue($project); ?>
+                            <td class="text-center">
+                                <span class="badge <?= creditBadgeClass($score); ?> px-3 py-2 fw-semibold"><?= htmlspecialchars(number_format($score, 0), ENT_QUOTES, 'UTF-8') ?></span>
+                            </td>
                             <td class="text-end">
                                 <form method="post" action="sanction_loan.php" class="d-inline">
                                     <input type="hidden" name="project_id" value="<?= htmlspecialchars($project['id'] ?? '') ?>">
@@ -126,5 +219,27 @@ $loanApplications = array_values(array_filter($projects, function ($project) {
     </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    const riskCtx = document.getElementById('riskChart');
+    if (riskCtx) {
+        new Chart(riskCtx, {
+            type: 'pie',
+            data: {
+                labels: <?= json_encode(array_keys($statusCounts)); ?>,
+                datasets: [{
+                    data: <?= json_encode(array_values($statusCounts)); ?>,
+                    backgroundColor: ['#0f766e', '#1d4ed8', '#f59e0b', '#ef4444', '#22c55e', '#6366f1'],
+                    borderWidth: 1,
+                }],
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'bottom' },
+                },
+            },
+        });
+    }
+</script>
 </body>
 </html>

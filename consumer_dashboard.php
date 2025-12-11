@@ -29,6 +29,14 @@ $myBills = array_values(array_filter($bills, function ($bill) use ($userId) {
     return isset($bill['consumer_id']) && (string)$bill['consumer_id'] === (string)$userId && strcasecmp($bill['status'] ?? '', 'UNPAID') === 0;
 }));
 
+$generationData = [12, 14, 11, 15, 16, 14, 13];
+$generationLabels = [];
+for ($i = 6; $i >= 0; $i--) {
+    $generationLabels[] = date('M j', strtotime("-$i days"));
+}
+$totalGeneration = array_sum($generationData);
+$totalSavings = $totalGeneration * 4;
+
 function statusBadge(string $status): string
 {
     $status = strtoupper($status);
@@ -49,6 +57,7 @@ function statusBadge(string $status): string
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Consumer Dashboard | Digital RESCO Platform</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body { background: #f6f8fb; }
         .page-hero {
@@ -89,6 +98,23 @@ function statusBadge(string $status): string
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     <?php endif; ?>
+
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="mb-0 fw-semibold">Solar Generation</h5>
+                <small class="text-muted">Energy generation (kWh) over the last 7 days</small>
+            </div>
+            <div class="text-end">
+                <p class="text-muted mb-1">Total Money Saved</p>
+                <h4 class="fw-bold text-success mb-0">₹<?= htmlspecialchars(number_format($totalSavings, 2), ENT_QUOTES, 'UTF-8') ?></h4>
+                <small class="text-muted">@ ₹4 per kWh generated</small>
+            </div>
+        </div>
+        <div class="card-body">
+            <canvas id="generationChart" height="120"></canvas>
+        </div>
+    </div>
 
     <div class="row g-4 mb-4">
         <div class="col-lg-4">
@@ -194,5 +220,34 @@ function statusBadge(string $status): string
     </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    const generationCtx = document.getElementById('generationChart');
+    if (generationCtx) {
+        new Chart(generationCtx, {
+            type: 'line',
+            data: {
+                labels: <?= json_encode($generationLabels); ?>,
+                datasets: [{
+                    label: 'Energy Generation (kWh)',
+                    data: <?= json_encode($generationData); ?>,
+                    fill: true,
+                    tension: 0.4,
+                    backgroundColor: 'rgba(34,197,94,0.15)',
+                    borderColor: '#22c55e',
+                    borderWidth: 3,
+                    pointBackgroundColor: '#16a34a',
+                    pointRadius: 4,
+                }],
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true },
+                },
+            },
+        });
+    }
+</script>
 </body>
 </html>

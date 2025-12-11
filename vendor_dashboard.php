@@ -34,6 +34,36 @@ foreach ($transactions as $txn) {
     }
 }
 
+// Pipeline and impact metrics
+$appliedStatuses = ['DRAFT', 'PENDING_CONSUMER_APPROVAL', 'SUBMITTED'];
+$approvedStatuses = ['APPROVED', 'FUNDING_REQUESTED'];
+$liveStatuses = ['LIVE'];
+
+$pipelineCounts = [
+    'Applied' => 0,
+    'Approved' => 0,
+    'Live' => 0,
+];
+
+$installedCapacity = 0.0;
+
+foreach ($myProjects as $project) {
+    $status = strtoupper($project['status'] ?? 'DRAFT');
+    if (in_array($status, $appliedStatuses, true)) {
+        $pipelineCounts['Applied']++;
+    } elseif (in_array($status, $approvedStatuses, true)) {
+        $pipelineCounts['Approved']++;
+    } elseif (in_array($status, $liveStatuses, true)) {
+        $pipelineCounts['Live']++;
+    }
+
+    if (in_array($status, $liveStatuses, true)) {
+        $installedCapacity += (float)($project['capacity_kw'] ?? 0);
+    }
+}
+
+$co2Offset = $installedCapacity * 0.8;
+
 // Status badge helper
 function statusBadgeClass(string $status): string
 {
@@ -55,6 +85,7 @@ function statusBadgeClass(string $status): string
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Vendor Dashboard | Digital RESCO Platform</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body { background: #f8fafc; }
         .page-header {
@@ -100,6 +131,36 @@ function statusBadgeClass(string $status): string
                     <p class="small text-muted mb-0">Total earnings from paid consumer bills.</p>
                 </div>
             </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <p class="text-muted mb-1">Total Capacity Installed (kW)</p>
+                    <h4 class="fw-bold"><?= htmlspecialchars(number_format($installedCapacity, 2), ENT_QUOTES, 'UTF-8') ?></h4>
+                    <p class="small text-muted mb-0">Across live RESCO deployments.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <p class="text-muted mb-1">CO2 Offset (Tons)</p>
+                    <h4 class="fw-bold text-primary"><?= htmlspecialchars(number_format($co2Offset, 2), ENT_QUOTES, 'UTF-8') ?></h4>
+                    <p class="small text-muted mb-0">Estimated using 0.8 ton per kW.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="mb-0 fw-semibold">Pipeline Overview</h5>
+                <small class="text-muted">Applied vs. Approved vs. Live</small>
+            </div>
+        </div>
+        <div class="card-body">
+            <canvas id="pipelineChart" height="120"></canvas>
         </div>
     </div>
 
@@ -154,5 +215,31 @@ function statusBadgeClass(string $status): string
     </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    const pipelineCtx = document.getElementById('pipelineChart');
+    if (pipelineCtx) {
+        new Chart(pipelineCtx, {
+            type: 'bar',
+            data: {
+                labels: <?= json_encode(array_keys($pipelineCounts)); ?>,
+                datasets: [{
+                    label: 'Projects',
+                    data: <?= json_encode(array_values($pipelineCounts)); ?>,
+                    backgroundColor: ['#0f766e', '#f59e0b', '#1d4ed8'],
+                    borderRadius: 8,
+                }],
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false },
+                },
+                scales: {
+                    y: { beginAtZero: true, ticks: { precision: 0 } },
+                },
+            },
+        });
+    }
+</script>
 </body>
 </html>
