@@ -103,6 +103,7 @@ function statusBadgeClass(string $status): string
     </style>
 </head>
 <body>
+<?php include __DIR__ . '/header.php'; ?>
 <div class="container py-4">
     <div class="d-flex justify-content-between align-items-start mb-4 page-header">
         <div>

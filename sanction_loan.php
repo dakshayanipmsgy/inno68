@@ -46,4 +46,10 @@ $projects[$projectIndex]['financed_date'] = date('c');
 
 writeJSON('projects.json', $projects);
 
+// Notify vendor on fund disbursal.
+$vendorId = $projects[$projectIndex]['vendor_id'] ?? null;
+if ($vendorId) {
+    sendNotification((string)$vendorId, 'Funds Disbursed. Your project is live.', 'success');
+}
+
 redirect('financier_dashboard.php?success=' . urlencode('Loan Disbursed. Project is LIVE.'));

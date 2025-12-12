@@ -41,4 +41,17 @@ $projects[$projectIndex]['grid_approval_date'] = date('c');
 
 writeJSON('projects.json', $projects);
 
+// Notify vendor and financiers.
+$vendorId = $projects[$projectIndex]['vendor_id'] ?? null;
+if ($vendorId) {
+    sendNotification((string)$vendorId, 'Grid Approved. Project is now bankable.', 'success');
+}
+
+$users = readJSON('users.json');
+foreach ($users as $user) {
+    if (isset($user['role'], $user['id']) && strcasecmp($user['role'], 'Financier') === 0) {
+        sendNotification((string)$user['id'], 'New Grid-approved project ready for financing.', 'info');
+    }
+}
+
 redirect('dashboard.php?success=' . urlencode('Net Metering Approved. Project is now visible to Financiers.'));

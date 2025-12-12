@@ -48,4 +48,17 @@ $projects[$projectIndex]['ppa_signed_date'] = date('c');
 
 writeJSON('projects.json', $projects);
 
+// Notify vendor and DISCOM stakeholders.
+$vendorId = $projects[$projectIndex]['vendor_id'] ?? null;
+if ($vendorId) {
+    sendNotification((string)$vendorId, 'Consumer signed PPA for your project.', 'info');
+}
+
+$users = readJSON('users.json');
+foreach ($users as $user) {
+    if (isset($user['role'], $user['id']) && strcasecmp($user['role'], 'DISCOM') === 0) {
+        sendNotification((string)$user['id'], 'New Grid Request ready for review.', 'warning');
+    }
+}
+
 redirect('dashboard.php?success=' . urlencode('PPA Signed. Application sent to DISCOM for Grid Approval.'));
