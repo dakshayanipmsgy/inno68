@@ -28,6 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if ($foundUser && isset($foundUser['password']) && password_verify($password, $foundUser['password'])) {
+            session_regenerate_id(true);
             $_SESSION['user_id'] = $foundUser['id'];
             $_SESSION['user_name'] = $foundUser['name'] ?? '';
             $_SESSION['user_role'] = $foundUser['role'] ?? '';
