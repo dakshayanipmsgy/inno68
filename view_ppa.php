@@ -39,22 +39,37 @@ if (!$project) {
     redirect('dashboard.php?error=' . urlencode('You are not authorized to view this project.'));
 }
 
-$projectConsumerId = (string)($project['consumer_id'] ?? '');
-$projectVendorId = (string)($project['vendor_id'] ?? '');
-$userIdAsString = (string)$userId;
+// --- START AUTH CHECK FIX ---
+$current_user_id = (string)$_SESSION['user_id'];
+$project_consumer_id = (string)$project['consumer_id'];
+$project_vendor_id = (string)$project['vendor_id']; // Allow Vendor to view too
+$user_role = $_SESSION['role'];
 
-$isConsumer = $projectConsumerId !== '' && $projectConsumerId === $userIdAsString;
-$isVendor = $projectVendorId !== '' && $projectVendorId === $userIdAsString;
-$isAuditor = in_array($normalizedRole, ['discom', 'financier'], true);
+// Check if User is the Consumer OR the Vendor OR an Admin Role
+$is_authorized = false;
 
-if (!($isConsumer || $isVendor || $isAuditor)) {
-    echo "<h1>Authorization Failed</h1>";
-    echo "<p>Logged in User ID: " . $_SESSION['user_id'] . " (Type: " . gettype($_SESSION['user_id']) . ")</p>";
-    echo "<p>Project Assigned To ID: " . ($project['consumer_id'] ?? 'N/A') . " (Type: " . gettype($project['consumer_id'] ?? null) . ")</p>";
-    echo "<p>Project Vendor ID: " . ($project['vendor_id'] ?? 'N/A') . " (Type: " . gettype($project['vendor_id'] ?? null) . ")</p>";
-    echo "<p>Please ensure these match. If the Project ID looks like a Name (e.g., 'Amit'), then the Vendor creation step is saving Names instead of IDs.</p>";
-    exit;
+if ($current_user_id === $project_consumer_id) {
+    $is_authorized = true;
+} elseif ($current_user_id === $project_vendor_id) {
+    $is_authorized = true;
+} elseif ($user_role === 'DISCOM' || $user_role === 'Financier') {
+    $is_authorized = true;
 }
+
+if (!$is_authorized) {
+    // DEBUG MODE: Do not redirect. Show me the data.
+    echo "<div style='background:white; padding:20px; color:black; font-family:sans-serif;'>";
+    echo "<h1>Debug: Authorization Failed</h1>";
+    echo "<p><strong>Your User ID:</strong> " . htmlspecialchars($current_user_id) . " (Role: $user_role)</p>";
+    echo "<p><strong>Project Assigned Consumer ID:</strong> " . htmlspecialchars($project_consumer_id) . "</p>";
+    echo "<p><strong>Project Vendor ID:</strong> " . htmlspecialchars($project_vendor_id) . "</p>";
+    echo "<hr>";
+    echo "<p><em>If you see this, the IDs above do not match. If one looks like a Name (e.g., 'Amit') and the other is a Number, we need to fix the 'Create Project' logic.</em></p>";
+    echo "<a href='dashboard.php'>Back to Dashboard</a>";
+    echo "</div>";
+    exit; // Stop script execution here
+}
+// --- END AUTH CHECK FIX ---
 
 $vendorName = 'Vendor';
 $consumerDisplayName = $consumerName;
