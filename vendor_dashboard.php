@@ -112,8 +112,9 @@ function statusBadgeClass(string $status): string
         </div>
         <div class="text-end">
             <span class="badge bg-light text-dark mb-2">Role: Vendor</span>
-            <div>
+            <div class="d-flex gap-2 justify-content-end">
                 <a href="create_project.php" class="btn btn-light text-primary fw-semibold shadow-sm">+ Create New Project</a>
+                <a href="logout.php" class="btn btn-outline-light fw-semibold shadow-sm text-dark">Logout</a>
             </div>
         </div>
     </div>
