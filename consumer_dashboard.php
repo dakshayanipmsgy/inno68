@@ -1,4 +1,7 @@
 <?php
+header("Cache-Control: no-cache, no-store, must-revalidate");
+header("Pragma: no-cache");
+header("Expires: 0");
 session_start();
 require_once __DIR__ . '/functions.php';
 
@@ -81,7 +84,7 @@ function statusBadge(string $status): string
         <div class="text-end">
             <span class="badge bg-light text-dark mb-2">Role: Consumer</span>
             <div>
-                <a href="login.php" class="btn btn-light text-primary fw-semibold shadow-sm">Logout</a>
+                <a href="logout.php" class="btn btn-light text-primary fw-semibold shadow-sm">Logout</a>
             </div>
         </div>
     </div>
