@@ -56,6 +56,7 @@ $pendingProjects = array_values(array_filter($projects, function ($project) {
     </style>
 </head>
 <body>
+<?php include __DIR__ . '/header.php'; ?>
 <div class="container py-4">
     <div class="d-flex justify-content-between align-items-start mb-4 page-hero">
         <div>

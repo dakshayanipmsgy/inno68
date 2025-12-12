@@ -25,6 +25,11 @@ if (strcasecmp($role, 'Financier') === 0) {
     exit;
 }
 
+if (strcasecmp($role, 'MNRE_Admin') === 0) {
+    require __DIR__ . '/mnre_dashboard.php';
+    exit;
+}
+
 if (strcasecmp($role, 'Vendor') === 0) {
     require __DIR__ . '/vendor_dashboard.php';
     exit;

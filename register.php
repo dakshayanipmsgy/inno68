@@ -2,7 +2,7 @@
 session_start();
 require_once __DIR__ . '/functions.php';
 
-$roles = ['Vendor', 'Consumer', 'Financier', 'DISCOM'];
+$roles = ['Vendor', 'Consumer', 'Financier', 'DISCOM', 'MNRE_Admin'];
 $errors = [];
 $success = '';
 
@@ -47,8 +47,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($emailExists) {
             $errors[] = 'An account with that email already exists.';
         } else {
+            $newUserId = uniqid('user_', true);
+
             $users[] = [
-                'id' => uniqid('user_', true),
+                'id' => $newUserId,
                 'name' => $name,
                 'email' => $email,
                 'password' => password_hash($password, PASSWORD_DEFAULT),
@@ -59,6 +61,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             if (writeJSON('users.json', $users)) {
                 $success = 'Registration successful. You can now log in.';
+                sendNotification($newUserId, 'Welcome to the Platform.', 'success');
             } else {
                 $errors[] = 'Unable to save your registration. Please try again.';
             }
