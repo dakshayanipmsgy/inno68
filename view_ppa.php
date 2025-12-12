@@ -9,7 +9,13 @@ $userId = $_SESSION['user_id'] ?? null;
 $role = $_SESSION['role'] ?? $_SESSION['user_role'] ?? '';
 $consumerName = $_SESSION['name'] ?? $_SESSION['user_name'] ?? 'Consumer';
 
-if (!$userId || strcasecmp($role, 'Consumer') !== 0) {
+if (!$userId) {
+    redirect('dashboard.php');
+}
+
+$normalizedRole = strtolower((string)$role);
+$allowedRoles = ['consumer', 'vendor', 'discom', 'financier'];
+if (!in_array($normalizedRole, $allowedRoles, true)) {
     redirect('dashboard.php');
 }
 
@@ -29,8 +35,25 @@ foreach ($projects as $item) {
     }
 }
 
-if (!$project || (string)($project['consumer_id'] ?? '') !== (string)$userId) {
+if (!$project) {
     redirect('dashboard.php?error=' . urlencode('You are not authorized to view this project.'));
+}
+
+$projectConsumerId = (string)($project['consumer_id'] ?? '');
+$projectVendorId = (string)($project['vendor_id'] ?? '');
+$userIdAsString = (string)$userId;
+
+$isConsumer = $projectConsumerId !== '' && $projectConsumerId === $userIdAsString;
+$isVendor = $projectVendorId !== '' && $projectVendorId === $userIdAsString;
+$isAuditor = in_array($normalizedRole, ['discom', 'financier'], true);
+
+if (!($isConsumer || $isVendor || $isAuditor)) {
+    echo "<h1>Authorization Failed</h1>";
+    echo "<p>Logged in User ID: " . $_SESSION['user_id'] . " (Type: " . gettype($_SESSION['user_id']) . ")</p>";
+    echo "<p>Project Assigned To ID: " . ($project['consumer_id'] ?? 'N/A') . " (Type: " . gettype($project['consumer_id'] ?? null) . ")</p>";
+    echo "<p>Project Vendor ID: " . ($project['vendor_id'] ?? 'N/A') . " (Type: " . gettype($project['vendor_id'] ?? null) . ")</p>";
+    echo "<p>Please ensure these match. If the Project ID looks like a Name (e.g., 'Amit'), then the Vendor creation step is saving Names instead of IDs.</p>";
+    exit;
 }
 
 $vendorName = 'Vendor';
