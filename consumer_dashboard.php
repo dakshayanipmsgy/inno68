@@ -208,7 +208,8 @@ function statusBadge(string $status): string
                             <td><span class="badge <?= statusBadge($status); ?>"><?= htmlspecialchars(str_replace('_', ' ', $status), ENT_QUOTES, 'UTF-8') ?></span></td>
                             <td class="text-end">
                                 <?php if (strcasecmp($status, 'PENDING_CONSUMER_APPROVAL') === 0): ?>
-                                    <a href="view_ppa.php?project_id=<?= urlencode($project['id'] ?? '') ?>" class="btn btn-primary btn-sm">Review &amp; Sign PPA</a>
+                                    <?php $projectId = $project['project_id'] ?? $project['id'] ?? ''; ?>
+                                    <a href="view_ppa.php?project_id=<?= urlencode($projectId) ?>" class="btn btn-primary btn-sm">Review &amp; Sign PPA</a>
                                 <?php elseif (strcasecmp($status, 'LIVE') === 0): ?>
                                     <a href="#" class="btn btn-outline-success btn-sm">View Dashboard</a>
                                 <?php else: ?>

@@ -206,9 +206,10 @@ function statusBadgeClass(string $status): string
                                 <span class="badge <?= statusBadgeClass($status); ?>"><?= htmlspecialchars(str_replace('_', ' ', $status), ENT_QUOTES, 'UTF-8') ?></span>
                             </td>
                             <td class="text-end">
+                                <?php $projectId = $project['project_id'] ?? $project['id'] ?? ''; ?>
                                 <div class="btn-group" role="group">
-                                    <a href="#" class="btn btn-outline-primary btn-sm">View</a>
-                                    <a href="#" class="btn btn-outline-secondary btn-sm">Edit</a>
+                                    <a href="vendor_view_project.php?project_id=<?= urlencode($projectId) ?>" class="btn btn-outline-primary btn-sm">View</a>
+                                    <a href="vendor_edit_project.php?project_id=<?= urlencode($projectId) ?>" class="btn btn-outline-secondary btn-sm">Edit</a>
                                 </div>
                             </td>
                         </tr>
