@@ -10,18 +10,43 @@ if (!isset($_GET['project_id'])) {
 $projectId = (string)$_GET['project_id'];
 
 // Step 2: Load Data.
-$projects = readJSON('projects.json');
-$project = null;
-foreach ($projects as $item) {
-    if (isset($item['id']) && (string)$item['id'] === $projectId) {
-        $project = $item;
+// --- START DEBUG SEARCH FIX ---
+$projects = readJSON('data/projects.json');
+$requested_id = trim($_GET['project_id']); // Remove potential whitespace
+$found_project = null;
+
+// Debug: Print what we are looking for
+echo "<div style='background:#f4f4f4; padding:15px; border:1px solid #ccc;'>";
+echo "<h3>Debugging Search Loop</h3>";
+echo "<p><strong>Looking for ID:</strong> [" . htmlspecialchars($requested_id) . "] (Type: " . gettype($requested_id) . ")</p>";
+echo "<p><strong>Total Projects in DB:</strong> " . count($projects) . "</p>";
+echo "<hr>";
+
+foreach ($projects as $p) {
+    // Check which key holds the ID (handle common variations)
+    $p_id = isset($p['id']) ? $p['id'] : (isset($p['project_id']) ? $p['project_id'] : 'UNKNOWN_KEY');
+    
+    echo "<p>Checking against DB ID: [" . htmlspecialchars($p_id) . "] (Type: " . gettype($p_id) . ") ... ";
+    
+    // LOOSE COMPARISON (String vs Int safe)
+    if ((string)$p_id == (string)$requested_id) {
+        echo "<span style='color:green; font-weight:bold;'>MATCH!</span></p>";
+        $found_project = $p;
         break;
+    } else {
+        echo "<span style='color:red;'>No Match</span></p>";
     }
 }
+echo "</div>";
 
-if ($project === null) {
-    die("<h1>Error: Project not found in database.</h1>");
+if (!$found_project) {
+    echo "<h3>DUMP OF FIRST PROJECT (Check your Key Names):</h3>";
+    echo "<pre>" . print_r($projects[0], true) . "</pre>";
+    die("<h1>Error: Project not found in database. See debug details above.</h1>");
 }
+
+$project = $found_project;
+// --- END DEBUG SEARCH FIX ---
 
 // Step 3: Auth Check (The Critical Part).
 $u_id = (string)($_SESSION['user_id'] ?? '');
